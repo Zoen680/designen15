@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Design en 15' — Générateur de sujets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="topbar">
+      <div class="kicker" id="page-kicker">Générateur de sujets</div>
+      <div class="topbar-actions">
+        <select class="language-select" id="header-language" aria-label="Langue de l’interface">
+          <option value="fr">Français</option>
+          <option value="en">English</option>
+        </select>
+        <button class="account-trigger" id="account-trigger" type="button">Se connecter</button>
+      </div>
+    </div>
+    <h1 id="page-title">Design en <span>15'</span></h1>
+  </header>
+
+  <!-- START SCREEN -->
+  <div class="panel" id="start-screen">
+    <p class="intro" data-i18n="intro">10 thèmes sont sélectionnés au hasard et gardés secrets. Un nouveau est révélé à chaque manche, sur 5 manches.</p>
+    <button class="btn-primary" id="start-btn">Démarrer le live</button>
+  </div>
+
+  <!-- LIVE SCREEN -->
+  <div class="panel is-hidden" id="live-screen">
+    <div class="round-indicator"><span id="round-label">Manche</span> <b id="round-num">1</b> / 5</div>
+    <div class="stage">
+      <div class="waiting" id="stage-content">Prêt à tirer le thème de la manche.</div>
+    </div>
+    <button class="btn-primary" id="draw-btn">Tirer le thème</button>
+    <button class="btn-ghost is-hidden" id="next-btn">Manche suivante</button>
+
+    <div class="history is-hidden" id="history-block">
+      <h2 id="history-title">Manches précédentes</h2>
+      <ol id="history-list"></ol>
+    </div>
+  </div>
+
+  <!-- RECAP SCREEN -->
+  <div class="panel recap is-hidden" id="recap-screen">
+    <p id="recap-intro">Les 5 thèmes du live, dans l'ordre du tirage.</p>
+    <ol id="recap-list"></ol>
+    <button class="btn-ghost" id="reset-btn">Nouveau live</button>
+  </div>
+
+  <!-- PROFILE SCREEN -->
+  <div class="profile-screen is-hidden" id="profile-screen">
+    <button class="back-link" id="profile-back-btn" type="button">← Retour au générateur</button>
+    <div class="profile-hero">
+      <div class="profile-avatar" id="profile-avatar">?</div>
+      <div>
+        <div class="kicker" id="profile-kicker">Espace personnel</div>
+        <h2 id="profile-heading">Mon profil</h2>
+        <p id="profile-email"></p>
+      </div>
+    </div>
+
+    <div class="profile-grid">
+      <section class="settings-card">
+        <div class="section-heading">
+          <div>
+            <div class="kicker" id="profile-account-kicker">Compte</div>
+            <h3 id="profile-account-heading">Informations personnelles</h3>
+          </div>
+        </div>
+        <form id="profile-form">
+          <label for="profile-name" id="profile-name-label">Nom affiché</label>
+          <input id="profile-name" name="name" type="text" maxlength="40" placeholder="Votre prénom">
+          <p class="form-error" id="profile-form-message" role="status"></p>
+          <button class="btn-primary" id="profile-save-btn" type="submit">Enregistrer les changements</button>
+        </form>
+      </section>
+
+      <section class="settings-card">
+        <div class="section-heading">
+          <div>
+            <div class="kicker" id="profile-preferences-kicker">Préférences</div>
+            <h3 id="profile-settings-heading">Paramètres</h3>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div><strong id="motion-label">Animations</strong><span id="motion-description">Donner du rythme aux révélations</span></div>
+          <label class="switch"><input id="setting-motion" type="checkbox" checked><span></span></label>
+        </div>
+        <div class="setting-row">
+          <div><strong id="notifications-label">Notifications</strong><span id="notifications-description">Recevoir les rappels de live</span></div>
+          <label class="switch"><input id="setting-notifications" type="checkbox"><span></span></label>
+        </div>
+        <div class="setting-row">
+          <div><strong id="language-label">Langue</strong><span id="language-description">Langue de l’interface</span></div>
+          <select id="setting-language" aria-label="Langue de l’interface">
+            <option id="language-fr" value="fr">Français</option>
+            <option id="language-en" value="en">English</option>
+          </select>
+        </div>
+      </section>
+    </div>
+
+    <section class="profile-summary">
+      <div><span class="summary-value" id="profile-live-count">0</span><span>live enregistré</span></div>
+      <div><span class="summary-value" id="profile-theme-count">0</span><span>thèmes tirés</span></div>
+      <button class="btn-ghost" id="profile-logout-btn" type="button">Se déconnecter</button>
+    </section>
+    <section class="settings-card profile-history">
+      <div class="section-heading">
+        <div>
+          <div class="kicker" id="profile-history-kicker">Historique</div>
+          <h3 id="profile-history-heading">Mes anciens lives</h3>
+        </div>
+      </div>
+      <p class="empty-history" id="profile-empty-history">Aucun live enregistré pour le moment.</p>
+      <ol class="profile-history-list" id="profile-history-list"></ol>
+    </section>
+
+  </div>
+</div>
+
+<div class="modal-backdrop is-hidden" id="account-modal" aria-hidden="true">
+  <section class="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <button class="modal-close" id="modal-close" type="button" aria-label="Fermer">×</button>
+    <div id="auth-view">
+      <div class="modal-heading">
+        <div class="kicker" id="auth-kicker">Espace personnel</div>
+        <h2 id="account-title">Bienvenue</h2>
+        <p id="auth-description">Créez un compte pour retrouver votre session sur cet appareil.</p>
+      </div>
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab is-active" id="login-tab" type="button" role="tab" aria-selected="true">Connexion</button>
+        <button class="auth-tab" id="register-tab" type="button" role="tab" aria-selected="false">Créer un compte</button>
+      </div>
+      <form id="auth-form">
+        <label for="auth-email">Adresse e-mail</label>
+        <input id="auth-email" name="email" type="email" autocomplete="email" required>
+        <label for="auth-password">Mot de passe</label>
+        <input id="auth-password" name="password" type="password" minlength="6" autocomplete="current-password" required>
+        <p class="form-error" id="form-error" role="alert"></p>
+        <button class="btn-primary" id="auth-submit" type="submit">Se connecter</button>
+      </form>
+    </div>
+    <div class="is-hidden" id="account-view">
+      <div class="modal-heading">
+        <div class="kicker" id="account-kicker">Votre compte</div>
+        <h2 id="account-email"></h2>
+        <p id="account-description">Votre session est enregistrée sur cet appareil.</p>
+      </div>
+      <button class="btn-primary" id="logout-btn" type="button">Se déconnecter</button>
+    </div>
+  </section>
+</div>
+
+<script src="js/data/themes.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/config/supabase.js"></script>
+<script src="js/services/auth-service.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/live.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
